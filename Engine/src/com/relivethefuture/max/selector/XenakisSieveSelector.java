@@ -13,6 +13,7 @@ public class XenakisSieveSelector extends CommonSequenceSelector {
     Logger logger = LoggerFactory.getLogger(XenakisSieveSelector.class);
     private int modulo = 1;
     private int shift = 0;
+    private int rModm = 0;
 
     public XenakisSieveSelector() {
         super();
@@ -41,17 +42,28 @@ public class XenakisSieveSelector extends CommonSequenceSelector {
     }
 
     protected void updatePartials() {
-        int rModm = shift % modulo;
+        //int rModm = shift % modulo;
 
         int i;
+        boolean b;
+        int low = MAX_PARTIALS;
+        int high = 0;
+        int count = 0;
         for (i=0;  i< MAX_PARTIALS;i++) {
-            if(i < steps) {
-                partials[i] = ((i % modulo) == rModm) ? activeValue : 0f;
+            if((i < steps) &&  ((i % modulo) == rModm)) {
+                partials[i] = activeValue;
+                mask[i] = true;
+                count++;
+                if(i > high) high = i;
+                if(i < low) low = i;
             } else {
                 partials[i] = 0f;
+                mask[i] = false;
             }
-
         }
+        range.low = low;
+        range.high = high;
+        range.total = count;
     }
 
     @Override
@@ -60,9 +72,7 @@ public class XenakisSieveSelector extends CommonSequenceSelector {
         if(amount > MAX_PARTIALS) amount = MAX_PARTIALS;
         // Invert so we get increasing density
         this.modulo = (MAX_PARTIALS - amount) + 1;
-        int rModm = shift % modulo;
-//        logger.debug("Modulo " + modulo + ". rmodm " + rModm);
-
+        rModm = shift % modulo;
         changed = true;
     }
 
@@ -71,10 +81,7 @@ public class XenakisSieveSelector extends CommonSequenceSelector {
         if(amount < 0) amount = 0;
         if(amount > MAX_PARTIALS) amount = MAX_PARTIALS;
         this.shift = amount;
-
-        int rModm = shift % modulo;
-//        logger.debug("Shift " + shift + ". rmodm " + rModm);
-
+        rModm = shift % modulo;
         changed = true;
     }
 

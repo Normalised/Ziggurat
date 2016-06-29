@@ -9,7 +9,7 @@
 			"modernui" : 1
 		}
 ,
-		"rect" : [ 1998.0, 109.0, 697.0, 887.0 ],
+		"rect" : [ 1998.0, 109.0, 628.0, 887.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 1,
 		"default_fontsize" : 12.0,
@@ -38,6 +38,26 @@
 		"subpatcher_template" : "",
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-8",
+					"maxclass" : "newobj",
+					"numinlets" : 1,
+					"numoutlets" : 4,
+					"outlettype" : [ "", "", "", "" ],
+					"patching_rect" : [ 163.0, 668.0, 110.0, 22.0 ],
+					"restore" : 					{
+						"active" : [ 1 ],
+						"live.step" : [ 4, 16, 0, 16, 0, 16, 0, 16, 0, 1, 12, 0, 16, 59.0, 80.0, 0, 0, 60, 101, 4, 127, 127, 63, 83, 4, 127, 127, 67, 57, 4, 127, 127, 74, 78, 4, 127, 127, 70, 35, 4, 127, 127, 67, 75, 4, 127, 127, 60, 114, 4, 127, 127, 70, 75, 4, 127, 127, 67, 59, 4, 127, 127, 79, 80, 4, 127, 127, 60, 100, 4, 127, 127, 70, 84, 4, 127, 127, 60, 114, 4, 127, 127, 63, 98, 4, 127, 127, 70, 97, 4, 127, 127, 62, 103, 4, 127, 127, 1, 12, 0, 16, 48.0, 71.0, 0, 0, 61, 43, 4, 122, 46, 58, 113, 4, 57, 66, 59, 107, 4, 100, 81, 63, 90, 4, 47, 12, 61, 92, 4, 64, 72, 52, 71, 4, 91, 124, 70, 77, 4, 118, 99, 48, 14, 4, 6, 32, 52, 119, 4, 34, 118, 49, 49, 4, 60, 3, 51, 67, 4, 8, 88, 53, 62, 4, 123, 87, 64, 32, 4, 22, 84, 57, 77, 4, 112, 60, 59, 86, 4, 92, 8, 53, 120, 4, 87, 87, 1, 12, 0, 16, 48.0, 71.0, 0, 0, 58, 103, 4, 7, 127, 64, 96, 4, 89, 3, 60, 44, 4, 12, 75, 68, 107, 4, 60, 87, 65, 63, 4, 11, 19, 55, 38, 4, 110, 88, 65, 79, 4, 14, 9, 55, 100, 4, 55, 54, 67, 36, 4, 66, 119, 58, 22, 4, 20, 60, 59, 11, 4, 8, 49, 49, 93, 4, 63, 34, 65, 51, 4, 93, 104, 60, 118, 4, 65, 0, 67, 47, 4, 17, 103, 56, 55, 4, 72, 118, 1, 12, 0, 16, 48.0, 71.0, 0, 0, 58, 92, 4, 65, 23, 67, 34, 4, 117, 92, 49, 72, 4, 0, 25, 60, 45, 4, 63, 114, 49, 1, 4, 44, 72, 61, 71, 4, 68, 83, 54, 29, 4, 91, 43, 51, 40, 4, 41, 102, 49, 55, 4, 11, 59, 52, 104, 4, 80, 120, 63, 121, 4, 75, 64, 66, 57, 4, 88, 119, 53, 122, 4, 4, 0, 59, 83, 4, 78, 39, 53, 60, 4, 100, 109, 48, 4, 4, 57, 64 ],
+						"noteOffset" : [ 0 ]
+					}
+,
+					"style" : "",
+					"text" : "autopattr",
+					"varname" : "u256002085"
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"comment" : "Reset",
 					"id" : "obj-4",
 					"maxclass" : "inlet",
@@ -45,7 +65,6 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 176.0, 48.0, 30.0, 30.0 ],
-					"presentation_rect" : [ 176.0, 48.0, 0.0, 0.0 ],
 					"style" : ""
 				}
 
@@ -163,11 +182,24 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "int" ],
-					"parameter_enable" : 0,
+					"parameter_enable" : 1,
 					"patching_rect" : [ 50.0, 100.0, 24.0, 24.0 ],
 					"presentation" : 1,
 					"presentation_rect" : [ 5.884277, 4.669983, 24.0, 24.0 ],
-					"style" : ""
+					"saved_attribute_attributes" : 					{
+						"valueof" : 						{
+							"parameter_longname" : "active",
+							"parameter_shortname" : "active",
+							"parameter_type" : 3,
+							"parameter_initial_enable" : 1,
+							"parameter_initial" : [ 1 ],
+							"parameter_invisible" : 1
+						}
+
+					}
+,
+					"style" : "",
+					"varname" : "active"
 				}
 
 			}
@@ -178,11 +210,24 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "", "bang" ],
-					"parameter_enable" : 0,
+					"parameter_enable" : 1,
 					"patching_rect" : [ 75.0, 369.0, 50.0, 22.0 ],
 					"presentation" : 1,
 					"presentation_rect" : [ 33.671753, 4.669983, 50.0, 22.0 ],
-					"style" : ""
+					"saved_attribute_attributes" : 					{
+						"valueof" : 						{
+							"parameter_longname" : "noteOffset",
+							"parameter_shortname" : "noteOffset",
+							"parameter_type" : 3,
+							"parameter_initial_enable" : 1,
+							"parameter_initial" : [ 0 ],
+							"parameter_invisible" : 1
+						}
+
+					}
+,
+					"style" : "",
+					"varname" : "noteOffset"
 				}
 
 			}
@@ -580,18 +625,20 @@
 					"fontname" : "DejaVu Sans",
 					"id" : "obj-372",
 					"maxclass" : "live.step",
+					"nseq" : 4,
 					"numinlets" : 1,
 					"numoutlets" : 5,
 					"outlettype" : [ "", "", "", "", "" ],
 					"parameter_enable" : 1,
 					"patching_rect" : [ 50.0, 213.099976, 371.0, 82.900024 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 5.884277, 32.0, 452.0, 189.0 ],
+					"presentation_rect" : [ 5.884277, 36.0, 498.0, 248.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_longname" : "live.step[1]",
+							"parameter_longname" : "liveStepSequencer",
 							"parameter_shortname" : "live.step",
 							"parameter_type" : 3,
+							"parameter_initial" : [ 1, 16, 0, 1, 12, 0, 16, 59.0, 80.0, 0, 0, 60, 101, 4, 127, 127, 63, 83, 4, 127, 127, 67, 57, 4, 127, 127, 73, 78, 4, 127, 127, 70, 35, 4, 127, 127, 67, 75, 4, 127, 127, 60, 114, 4, 127, 127, 70, 75, 4, 127, 127, 67, 59, 4, 127, 127, 79, 80, 4, 127, 127, 60, 100, 4, 127, 127, 70, 84, 4, 127, 127, 60, 114, 4, 127, 127, 63, 98, 4, 127, 127, 70, 97, 4, 127, 127, 62, 103, 4, 127, 127 ],
 							"parameter_invisible" : 1
 						}
 
@@ -770,7 +817,9 @@
 			}
  ],
 		"parameters" : 		{
-			"obj-372" : [ "live.step[1]", "live.step", 0 ]
+			"obj-372" : [ "liveStepSequencer", "live.step", 0 ],
+			"obj-115" : [ "active", "active", 0 ],
+			"obj-380" : [ "noteOffset", "noteOffset", 0 ]
 		}
 ,
 		"dependency_cache" : [  ],

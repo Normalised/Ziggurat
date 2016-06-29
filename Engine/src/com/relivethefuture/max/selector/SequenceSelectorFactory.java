@@ -15,6 +15,7 @@ public class SequenceSelectorFactory {
         pool.put(SelectorType.EVERY,new Stack<SequenceSelector>());
         pool.put(SelectorType.XENAKIS,new Stack<SequenceSelector>());
         pool.put(SelectorType.EUCLIDEAN,new Stack<SequenceSelector>());
+        pool.put(SelectorType.EUCLIDEAN2,new Stack<SequenceSelector>());
     }
 
     public SequenceSelector getSelector(String name) throws Exception {

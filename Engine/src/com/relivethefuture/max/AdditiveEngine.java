@@ -4,6 +4,7 @@ import com.cycling74.max.Atom;
 import com.cycling74.max.DataTypes;
 import com.cycling74.msp.MSPPerformer;
 import com.cycling74.msp.MSPSignal;
+import com.relivethefuture.max.easing.*;
 import com.relivethefuture.max.modulation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,8 @@ import static com.relivethefuture.max.AdditiveEngineConfig.MAX_PARTIALS;
 import static java.lang.Math.PI;
 
 public class AdditiveEngine extends MSPPerformer implements ModSource {
+
+    public static final int SIN_WAVE_LENGTH_FACTOR = 4;
 
     Logger logger = LoggerFactory.getLogger(AdditiveEngine.class);
 
@@ -33,8 +36,11 @@ public class AdditiveEngine extends MSPPerformer implements ModSource {
     private double[] phases;
     private double[] increments;
     private float[] frequencies;
+    private float[] prevAmplitudes;
+    private double[] sinWave;
 
-    public static final String VERSION = "0.2";
+    public static final String VERSION = "0.3";
+    private int sinWaveLength;
 
     public AdditiveEngine() {
         Log4jConfigurator.configure();
@@ -42,10 +48,10 @@ public class AdditiveEngine extends MSPPerformer implements ModSource {
         // First outlet is data for sinusoids~
         // 2nd outlet is data for the UI
         // 3rd outlet is for mod matrix info
-        declareInlets(new int[]{DataTypes.ALL, DataTypes.LIST});
-        setInletAssist(new String[] { "Commands", "Parameter Modulation"});
-        setOutletAssist(new String[] {"sinusoids~","Mod Matrix","Info"});
-        declareOutlets(new int[]{DataTypes.LIST, DataTypes.ALL, DataTypes.ALL, DataTypes.ALL});
+        declareInlets(new int[]{SIGNAL, DataTypes.ALL, DataTypes.LIST});
+        setInletAssist(new String[] {"FM", "Commands", "Parameter Modulation"});
+        setOutletAssist(new String[] {"Audio","Frequencies","Amplitudes", "FM Mask", "Note Frequency"});
+        declareOutlets(new int[]{SIGNAL, DataTypes.LIST, DataTypes.LIST, DataTypes.LIST, DataTypes.FLOAT});
 
         declareAttribute("active", "setDisplay", "getActive");
 
@@ -63,7 +69,15 @@ public class AdditiveEngine extends MSPPerformer implements ModSource {
 
         logger.info("Additive Engine v" + VERSION);
 
-        output = new float[AdditiveEngineConfig.MAX_PARTIALS * 2];
+        output = new float[MAX_PARTIALS * 2];
+        phases = new double[MAX_PARTIALS];
+        increments = new double[MAX_PARTIALS];
+        frequencies = new float[MAX_PARTIALS];
+        prevAmplitudes = new float[MAX_PARTIALS];
+
+        for (int i = 0; i < MAX_PARTIALS; i++) {
+            prevAmplitudes[i] = 0f;
+        }
     }
 
     public void modulate(Atom[] params) {
@@ -123,8 +137,11 @@ public class AdditiveEngine extends MSPPerformer implements ModSource {
     public void midinote(Atom[] midi) {
         int note = midi[0].getInt();
         int velocity = midi[1].getInt();
-        zigguratEngine.midiNote(note,velocity);
+        float freq = zigguratEngine.midiNote(note,velocity);
         midiInputModule.noteIn(note, velocity);
+        if(freq > 0) {
+            outlet(4,freq);
+        }
     }
 
     public void maxPartials(int max) {
@@ -133,6 +150,11 @@ public class AdditiveEngine extends MSPPerformer implements ModSource {
 
     public void selectorLevel(int index, float value) {
         zigguratEngine.getSelector(index).setActiveValue(value);
+    }
+
+    public void selectorScale(int index, float start, float end) {
+        Scalable s = (Scalable) zigguratEngine.getSelector(index);
+        s.setScale(start, end);
     }
 
     public void selectorOp(Atom[] params) {
@@ -153,6 +175,16 @@ public class AdditiveEngine extends MSPPerformer implements ModSource {
         String type = params[1].getString();
 
         zigguratEngine.setSelectorType(index, type);
+    }
+
+    public void scaleFMViaSelector(int scaleFM) {
+        zigguratEngine.useFMSelectorScaling = scaleFM > 0;
+    }
+
+    // Choose FM partial mask. 0 -> 2 use one from the partial operator chain
+    // > 2 apply FM to all the partials.
+    public void fmSelector(int index) {
+        zigguratEngine.fmSelector(index);
     }
 
     public void fill(int selectorIndex, int amount) {
@@ -176,21 +208,10 @@ public class AdditiveEngine extends MSPPerformer implements ModSource {
         zigguratEngine.frequencyGenerator.selectNoteMapper(name);
     }
 
-    public void bang() {
-
-        zigguratEngine.update();
-        update();
-//        float[] f = zigguratEngine.freqOut;
-//        float[] amp = zigguratEngine.ampOut;
-//        int a = 0;
-//        for(int i=0;i<AdditiveEngineConfig.MAX_PARTIALS;i++) {
-//            output[a] = f[i];
-//            output[a+1] = amp[i];
-//            a += 2;
-//        }
-//        outlet(0,output);
-//
-//        outlet(2,zigguratEngine.frequencyGenerator.hasChanged());
+    public void ui() {
+        outlet(1,zigguratEngine.freqOut);
+        outlet(2,zigguratEngine.ampOut);
+        outlet(3,zigguratEngine.fmSelectMask);
     }
 
     public void saveScala() {
@@ -212,49 +233,80 @@ public class AdditiveEngine extends MSPPerformer implements ModSource {
     }
 
     public void dspsetup(MSPSignal[] in, MSPSignal[] out) {
+        logger.debug("DSP Setup");
         sampleRate = out[0].sr;
         inverseSampleRate = 1 / sampleRate;
-        phases = new double[MAX_PARTIALS];
-        increments = new double[MAX_PARTIALS];
-        frequencies = new float[MAX_PARTIALS];
+
+        sinWaveLength = (int) sampleRate * SIN_WAVE_LENGTH_FACTOR;
+        sinWave = new double[sinWaveLength];
+        double step = TWO_PI / sinWaveLength;
+        double a = 0;
+        for(int i = 0; i< sinWaveLength; i++) {
+            sinWave[i] = Math.sin(a);
+            a += step;
+        }
     }
 
-    public void update() {
-        //System.arraycopy(zigguratEngine.ampOut,0,amplitudes,0,MAX_PARTIALS);
-        float[] amps = zigguratEngine.ampOut;
+    public void bang() {
+        zigguratEngine.update();
         float[] freqs = zigguratEngine.freqOut;
+
         for(int i = 0; i< MAX_PARTIALS; i++) {
             if(freqs[i] != frequencies[i]) {
                 frequencies[i] = freqs[i];
-                increments[i] = (TWO_PI * freqs[i]) * inverseSampleRate;
-            }
-            // Reset phase for zero amp partials so when it starts up again the phase
-            // doesn't cause discontinuity in the output wave.
-            if(amps[i] == 0) {
-                phases[i] = 0f;
+                increments[i] = freqs[i] * SIN_WAVE_LENGTH_FACTOR;
             }
         }
     }
 
+    // 100 Hz
+    // 2PI * 100 * (1 / 44100)
+    // 200 PI / 44100
     @Override
-    public void perform(MSPSignal[] mspSignals, MSPSignal[] outSignals) {
+    public void perform(MSPSignal[] inSignals, MSPSignal[] outSignals) {
         float[] outVector = outSignals[0].vec;
         int vec_size = outSignals[0].n;
         float out = 0f;
         float[] amplitudes = zigguratEngine.ampOut;
+        float[] freqs = zigguratEngine.freqOut;
+
+
+        float a = 0f;
+        float p = 0f;
+        float dv = 1f / vec_size;
+        float da = 0f;
+        MSPSignal fm = inSignals[0];
+        boolean c = fm.connected;
+        boolean [] fmSelectMask = zigguratEngine.fmSelectMask;
+        float[] fmAmounts = zigguratEngine.fmAmounts;
 
         for(int v = 0; v < vec_size;v++) {
             for (int i = 0; i < MAX_PARTIALS; i++) {
-                if(amplitudes[i] > 0) {
-                    out += (float) Math.sin(phases[i]) * amplitudes[i];
+                a = prevAmplitudes[i] + ((amplitudes[i] - prevAmplitudes[i]) * (da * da));
+                if(a > 0) {
+                    out += sinWave[(int) phases[i]] * a;
                     phases[i] += increments[i];
-                    phases[i] %= TWO_PI;
+                    if(c && fmSelectMask[i]) {
+                        phases[i] += (fm.vec[v] * fmAmounts[i]);
+                    }
+                    if(phases[i] >= sinWaveLength) {
+                        while(phases[i] >= sinWaveLength) phases[i] -= sinWaveLength;
+                    } else if(phases[i] < 0) {
+                        while(phases[i] < 0) phases[i] += sinWaveLength;
+                    }
+                } else {
+                    // Reset phase for zero amp partials so when it starts up again the phase
+                    // doesn't cause discontinuity in the output wave.
+                    phases[i] = 0;
                 }
+
             }
+            da += dv;
             outVector[v] = out;
             out = 0f;
         }
 
+        System.arraycopy(amplitudes,0,prevAmplitudes,0,MAX_PARTIALS);
         /**
          * FAST
          * init:

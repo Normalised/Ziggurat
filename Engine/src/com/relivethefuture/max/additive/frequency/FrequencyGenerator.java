@@ -179,9 +179,10 @@ public class FrequencyGenerator extends CommonModule {
         changed = true;
     }
 
-    public void noteIn(int note) {
+    public float noteIn(int note) {
         noteFrequency = noteMapper.noteToFrequency(note);
         updateBase();
+        return noteFrequency;
     }
 
     public boolean hasChanged() {

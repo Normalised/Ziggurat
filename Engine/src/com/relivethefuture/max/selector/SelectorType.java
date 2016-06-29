@@ -7,7 +7,8 @@ import java.util.Map;
  * Created by martin on 14/01/13 at 16:37
  */
 public enum SelectorType {
-    EUCLIDEAN("E") { SequenceSelector get() { return new EuclideanSequenceSelector();}},
+    EUCLIDEAN("E") { SequenceSelector get() { return new EuclideanSequenceSelector(true);}},
+    EUCLIDEAN2("E2") { SequenceSelector get() { return new EuclideanSequenceSelector(false);}},
     XENAKIS("X") { SequenceSelector get() { return new XenakisSieveSelector();}},
     EVERY("ALL") { SequenceSelector get() { return new EverySequenceSelector();}};
 

@@ -1,11 +1,11 @@
 package com.relivethefuture.max.selector;
 
-import com.cycling74.max.MaxObject;
-import com.relivethefuture.max.AdditiveEngineConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+
+import static com.relivethefuture.max.AdditiveEngineConfig.MAX_PARTIALS;
 
 /**
  * Created by martin on 11/01/13 at 20:21
@@ -27,7 +27,10 @@ public class SequenceOperator {
     private boolean changed = false;
     private final HashMap<String, Integer> opMap;
 
+    private PartialRange range;
+
     public SequenceOperator() {
+        range = new PartialRange();
         operation = 2;
         opMap = new HashMap<String,Integer>();
         opMap.put("AND",AND);
@@ -52,57 +55,114 @@ public class SequenceOperator {
     public void doXOR(float[] a, float[] b, float[] output) {
         boolean aa = false;
         boolean bb = false;
-        for(int i = 0; i< AdditiveEngineConfig.MAX_PARTIALS; i++) {
+        boolean r = false;
+        for(int i = 0; i< MAX_PARTIALS; i++) {
             aa = a[i] > 0f;
             bb = b[i] > 0f;
-            output[i] = (aa ^ bb) ? Math.max(a[i],b[i]) : 0f;
+            r = (aa ^ bb);
+            output[i] = r ? Math.max(a[i],b[i]) : 0f;
+            if(r) {
+                range.total++;
+                if(i > range.high) range.high = i;
+                if(i < range.low) range.low = i;
+            }
         }
     }
 
     public void doOR(float[] a, float[] b, float[] output) {
-        for(int i=0;i<AdditiveEngineConfig.MAX_PARTIALS;i++) {
-            output[i] = ((a[i] > 0f) || (b[i] > 0f)) ? Math.max(a[i],b[i]) : 0f;
+        boolean r = false;
+        for(int i = 0; i< MAX_PARTIALS; i++) {
+            r = ((a[i] > 0f) || (b[i] > 0f));
+            output[i] = r ? Math.max(a[i],b[i]) : 0f;
+            if(r) {
+                range.total++;
+                if(i > range.high) range.high = i;
+                if(i < range.low) range.low = i;
+            }
         }
     }
 
     public void doAND(float[] a,float[] b, float[] output) {
-        for(int i=0;i<AdditiveEngineConfig.MAX_PARTIALS;i++) {
-            output[i] = ((b[i] > 0f) && (a[i] > 0f)) ? Math.max(a[i],b[i]) : 0f;
+        boolean r = false;
+        for(int i = 0; i< MAX_PARTIALS; i++) {
+            r = ((b[i] > 0f) && (a[i] > 0f));
+            output[i] = r ? Math.max(a[i],b[i]) : 0f;
+            if(r) {
+                range.total++;
+                if(i > range.high) range.high = i;
+                if(i < range.low) range.low = i;
+            }
+
         }
     }
 
     public void doNAND(float[] a, float[] b, float[] output) {
-        for(int i=0;i<AdditiveEngineConfig.MAX_PARTIALS;i++) {
-            output[i] = ((b[i] > 0f) && (a[i] > 0f)) ? 0f : Math.max(a[i],b[i]);
+        boolean r = false;
+        for(int i = 0; i< MAX_PARTIALS; i++) {
+            r = ((b[i] > 0f) && (a[i] > 0f));
+            output[i] = r ? 0f : Math.max(a[i],b[i]);
+            if(r) {
+                range.total++;
+                if(i > range.high) range.high = i;
+                if(i < range.low) range.low = i;
+            }
+
         }
     }
 
     public void doADD(float[] a,float[] b, float[] output) {
-        for(int i=0;i<AdditiveEngineConfig.MAX_PARTIALS;i++) {
+        for(int i = 0; i< MAX_PARTIALS; i++) {
             output[i] = a[i] + b[i];
+            if(output[i] > 0f) {
+                range.total++;
+                if(i > range.high) range.high = i;
+                if(i < range.low) range.low = i;
+            }
+
         }
     }
 
     public void doDIFF(float[] a,float[] b, float[] output) {
-        for(int i=0;i<AdditiveEngineConfig.MAX_PARTIALS;i++) {
+        for(int i = 0; i< MAX_PARTIALS; i++) {
             output[i] = Math.abs(a[i] - b[i]);
+            if(output[i] > 0f) {
+                range.total++;
+                if(i > range.high) range.high = i;
+                if(i < range.low) range.low = i;
+            }
+
         }
     }
 
     public void doMIN(float[] a,float[] b, float[] output) {
-        for(int i=0;i<AdditiveEngineConfig.MAX_PARTIALS;i++) {
+        for(int i = 0; i< MAX_PARTIALS; i++) {
             output[i] = Math.min(a[i], b[i]);
+            if(output[i] > 0f) {
+                range.total++;
+                if(i > range.high) range.high = i;
+                if(i < range.low) range.low = i;
+            }
+
         }
     }
 
     public void doMAX(float[] a,float[] b, float[] output) {
-        for(int i=0;i<AdditiveEngineConfig.MAX_PARTIALS;i++) {
+        for(int i = 0; i< MAX_PARTIALS; i++) {
             output[i] = Math.max(a[i], b[i]);
+            if(output[i] > 0f) {
+                range.total++;
+                if(i > range.high) range.high = i;
+                if(i < range.low) range.low = i;
+            }
         }
     }
 
 
-    public void combine(float[] a, float[] b, float[] result) {
+    public PartialRange combine(float[] a, float[] b, float[] result) {
+
+        range.low = MAX_PARTIALS;
+        range.high = 0;
+        range.total = 0;
 
         if(operation == AND) {
             doAND(a, b, result);
@@ -122,9 +182,11 @@ public class SequenceOperator {
             doMAX(a, b, result);
         }
         changed = false;
+        return range;
     }
 
     public boolean hasChanged() {
         return changed;
     }
+
 }

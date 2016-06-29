@@ -11,6 +11,7 @@ onresize(0,0);
 
 var amplitudes = [];
 var partials = [];
+var fmMask = [];
 
 for(var i=0;i<128;i++) {
     amplitudes[i] = 0;
@@ -34,10 +35,15 @@ function setAmplitudes() {
 function setPartials() {
     //post("Set Partials " + arguments[0] + "\n");
     for(i=0;i<128;i++) {
-        partials[i] = arguments[i] ? arguments[i] : 0;
+        partials[i] = arguments[i] ? (Math.log(arguments[i]) - 2.5) : 0;
     }
 }
 
+function setFMMask() {
+    for(i=0;i<128;i++) {
+        fmMask[i] = arguments[i] ? true : false;
+    }
+}
 function bang() {
     mgraphics.redraw();
 }
@@ -57,10 +63,15 @@ function paint()
     }
 
     mgraphics.set_line_width(0.008);
-    mgraphics.set_source_rgba(1.,1.,1.,1.);
+    //mgraphics.set_source_rgba(1.,1.,1.,1.);
 
     var x = 0.0;
     for (var i=0; i<128; i++) {
+        if(fmMask[i]) {
+            mgraphics.set_source_rgba(0.5,1.,0.5,1.);
+        } else {
+            mgraphics.set_source_rgba(1.,1.,1.,1.);
+        }
         x = (partials[i] * scale) - (extent * 0.99);
         mgraphics.move_to(x, -1.0);
         mgraphics.line_to(x, (amplitudes[i] * 2) -1);

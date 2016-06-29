@@ -27,21 +27,38 @@ public class EverySequenceSelector extends CommonSequenceSelector {
     @Override
     protected void updatePartials() {
         int pos = 0;
-        for(int i = 0; i< MAX_PARTIALS; i++) {
+        boolean b;
+        int low = MAX_PARTIALS;
+        int high = 0;
+        int count = 0;
+        int i = 0;
+        for(i = 0; i< MAX_PARTIALS; i++) {
             pos = (i + shift) % MAX_PARTIALS;
             if(pos < 0) {
                 logger.error("Pos is negative. Shift " + shift + ". Fill " + fill + ". Pos " + pos + ". i " + i);
             }
             if(i < steps) {
                 if(fill > 1) {
-                    partials[pos] = (i % fill != 0) ? activeValue : 0f;
+                    b = (i % fill != 0);
+                    partials[pos] = b ? activeValue : 0f;
+                    mask[pos] = b;
                 } else {
                     partials[pos] = activeValue;
+                    mask[pos] = true;
                 }
             } else {
                 partials[pos] = 0f;
+                mask[pos] = false;
+            }
+            if(mask[pos]) {
+                count++;
+                if(pos > high) high = pos;
+                if(pos < low) low = pos;
             }
         }
+        range.low = low;
+        range.high = high;
+        range.total = count;
     }
 
     public void select(int a, int b) {

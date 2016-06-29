@@ -4,10 +4,7 @@ import com.relivethefuture.max.additive.frequency.FrequencyGenerator;
 import com.relivethefuture.max.additive.processor.*;
 import com.relivethefuture.max.easing.ArrayInterpolator;
 import com.relivethefuture.max.modulation.*;
-import com.relivethefuture.max.selector.SelectorType;
-import com.relivethefuture.max.selector.SequenceOperator;
-import com.relivethefuture.max.selector.SequenceSelector;
-import com.relivethefuture.max.selector.SequenceSelectorFactory;
+import com.relivethefuture.max.selector.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +12,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.relivethefuture.max.AdditiveEngineConfig.MAX_PARTIALS;
 
 /**
  * Created by martin on 31/05/2016 at 16:22
@@ -44,6 +43,7 @@ public class ZigguratEngine {
     // Partials from result of partial selection
     private float[] selectedPartials;
 
+
     // Amplitudes before post-processing
     public float[] amp;
     // Amplitudes after processing
@@ -56,7 +56,7 @@ public class ZigguratEngine {
 
     private SequenceSelectorFactory selectorFactory;
     private boolean selectorsChanged = true;
-    private int maxSelectedPartials = AdditiveEngineConfig.MAX_PARTIALS;
+    private int maxSelectedPartials = MAX_PARTIALS;
 
     private final MidiInputModule midiInputModule;
 
@@ -67,6 +67,13 @@ public class ZigguratEngine {
     private boolean noteOn;
     private int maxPartials;
 
+    private int fmSelectorIndex = 3;
+    public boolean[] fmSelectMask;
+    public float[] fmAmounts;
+    private final boolean[] allPartialsMask;
+    private final float[] allPartialsAmounts;
+    public boolean useFMSelectorScaling = true;
+
     public ZigguratEngine() {
         Log4jConfigurator.configure();
 
@@ -74,16 +81,25 @@ public class ZigguratEngine {
         // 2nd outlet is data for the UI
         // 3rd outlet is for mod matrix info
 
-        amp = new float[AdditiveEngineConfig.MAX_PARTIALS];
-        freq = new float[AdditiveEngineConfig.MAX_PARTIALS];
-        ampOut = new float[AdditiveEngineConfig.MAX_PARTIALS];
-        freqOut = new float[AdditiveEngineConfig.MAX_PARTIALS];
+        amp = new float[MAX_PARTIALS];
+        freq = new float[MAX_PARTIALS];
+        ampOut = new float[MAX_PARTIALS];
+        freqOut = new float[MAX_PARTIALS];
+        allPartialsMask = new boolean[MAX_PARTIALS];
+        fmSelectMask = allPartialsMask;
+        allPartialsAmounts = new float[MAX_PARTIALS];
+        fmAmounts = new float[MAX_PARTIALS];
 
-        selectedPartials = new float[AdditiveEngineConfig.MAX_PARTIALS];
+        for (int i = 0; i < MAX_PARTIALS; i++) {
+            allPartialsMask[i] = true;
+            allPartialsAmounts[i] = 1f;
+        }
 
-        partialInterpolator = new ArrayInterpolator(AdditiveEngineConfig.MAX_PARTIALS);
+        selectedPartials = new float[MAX_PARTIALS];
+
+        partialInterpolator = new ArrayInterpolator(MAX_PARTIALS);
         partialInterpolator.setName("PartialInterp");
-        frequencyInterpolator = new ArrayInterpolator(AdditiveEngineConfig.MAX_PARTIALS);
+        frequencyInterpolator = new ArrayInterpolator(MAX_PARTIALS);
         frequencyInterpolator.setName("FreqInterp");
         frequencyGenerator = new FrequencyGenerator();
 
@@ -94,9 +110,9 @@ public class ZigguratEngine {
         selectors = new ArrayList<SequenceSelector>();
 
         try {
-            SequenceSelector e0 = selectorFactory.getSelector(SelectorType.EUCLIDEAN.getName());
-            SequenceSelector e1 = selectorFactory.getSelector(SelectorType.EUCLIDEAN.getName());
-            SequenceSelector e2 = selectorFactory.getSelector(SelectorType.EUCLIDEAN.getName());
+            SequenceSelector e0 = selectorFactory.getSelector(SelectorType.EVERY.getName());
+            SequenceSelector e1 = selectorFactory.getSelector(SelectorType.EVERY.getName());
+            SequenceSelector e2 = selectorFactory.getSelector(SelectorType.EVERY.getName());
             selectors.add(e0);
             selectors.add(e1);
             selectors.add(e2);
@@ -171,7 +187,7 @@ public class ZigguratEngine {
             float[] c = selectors.get(2).getSequence();
             operators.get(0).combine(a,b,selectedPartials);
             operators.get(1).combine(selectedPartials,c, selectedPartials);
-            for(int i=maxSelectedPartials;i<AdditiveEngineConfig.MAX_PARTIALS;i++) {
+            for(int i = maxSelectedPartials; i< MAX_PARTIALS; i++) {
                 selectedPartials[i] = 0f;
             }
             partialInterpolator.setCurrent(selectedPartials);
@@ -179,6 +195,17 @@ public class ZigguratEngine {
                 amp = selectedPartials;
             }
             selectorsChanged = false;
+
+            fmAmounts = allPartialsAmounts;
+            if(useFMSelectorScaling) {
+                if(fmSelectorIndex == 0) {
+                    fmAmounts = a;
+                } else if(fmSelectorIndex == 1) {
+                    fmAmounts = b;
+                } else if(fmSelectorIndex == 2) {
+                    fmAmounts = c;
+                }
+            }
         }
     }
     /**
@@ -197,8 +224,8 @@ public class ZigguratEngine {
             freq = frequencyInterpolator.getCurrent();
         }
 
-        System.arraycopy(amp,0,ampOut,0,AdditiveEngineConfig.MAX_PARTIALS);
-        System.arraycopy(freq,0,freqOut,0,AdditiveEngineConfig.MAX_PARTIALS);
+        System.arraycopy(amp,0,ampOut,0, MAX_PARTIALS);
+        System.arraycopy(freq,0,freqOut,0, MAX_PARTIALS);
 
         for(PartialProcessor processor : processors) {
             if(activeProcessors.get(processor)) {
@@ -224,23 +251,25 @@ public class ZigguratEngine {
         return modules;
     }
 
-    public void midiNote(int note, int velocity) {
+    public float midiNote(int note, int velocity) {
+        float freq = 0f;
         if(velocity > 0) {
+            freq = frequencyGenerator.noteIn(note);
             // update base frequency
-            frequencyGenerator.noteIn(note);
             //freq = frequencyGenerator.getFrequencies();
             //frequencyInterpolator.jumpTo(freq);
             noteOn = true;
         } else {
             noteOn = false;
         }
+        return freq;
     }
 
     public void setMaxPartials(int max) {
         if(max < 1) {
             max = 1;
-        } else if(max > AdditiveEngineConfig.MAX_PARTIALS) {
-            max = AdditiveEngineConfig.MAX_PARTIALS;
+        } else if(max > MAX_PARTIALS) {
+            max = MAX_PARTIALS;
         }
         maxSelectedPartials = max;
         for(SequenceSelector selector: selectors) {
@@ -284,5 +313,15 @@ public class ZigguratEngine {
                 }
             }
         }
+    }
+
+    public void fmSelector(int index) {
+        fmSelectorIndex = index;
+        if(index < 3) {
+            fmSelectMask = getSelector(index).getMask();
+        } else {
+            fmSelectMask = allPartialsMask;
+        }
+
     }
 }

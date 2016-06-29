@@ -2,7 +2,7 @@
 	"name" : "Ziggurat",
 	"version" : 1,
 	"creationdate" : -747654280,
-	"modificationdate" : -746984234,
+	"modificationdate" : -745139497,
 	"viewrect" : [ 3228.0, 117.0, 300.0, 768.0 ],
 	"autoorganize" : 0,
 	"hideprojectwindow" : 0,
@@ -16,7 +16,7 @@
 				"toplevel" : 1
 			}
 ,
-			"ZigguratSequencer.maxpat" : 			{
+			"ZigguratPoly.maxpat" : 			{
 				"kind" : "patcher",
 				"local" : 1,
 				"singleton" : 				{
@@ -25,11 +25,36 @@
 				}
 
 			}
+,
+			"ZigguratSequencer.maxpat" : 			{
+				"kind" : "patcher",
+				"local" : 1
+			}
+,
+			"FileBrowser.maxpat" : 			{
+				"kind" : "patcher",
+				"local" : 1,
+				"singleton" : 				{
+					"bootpath" : "C:/audio/max/FileTools/patches",
+					"projectrelativepath" : "../../FileTools/patches"
+				}
+
+			}
+,
+			"ZigguratPolyVoice.maxpat" : 			{
+				"kind" : "patcher",
+				"local" : 1
+			}
 
 		}
 ,
 		"code" : 		{
 			"swingCalc.js" : 			{
+				"kind" : "javascript",
+				"local" : 1
+			}
+,
+			"modMatrixManager.js" : 			{
 				"kind" : "javascript",
 				"local" : 1
 			}

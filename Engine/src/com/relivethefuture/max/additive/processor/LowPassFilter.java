@@ -1,6 +1,5 @@
 package com.relivethefuture.max.additive.processor;
 
-import com.relivethefuture.max.easing.FloatInterpolator;
 import com.relivethefuture.max.modulation.CommonModule;
 import com.relivethefuture.max.modulation.Parameter;
 import org.slf4j.Logger;
@@ -122,13 +121,13 @@ public class LowPassFilter extends CommonModule implements PartialProcessor {
     @Override
     public void modulate(Parameter param, float amount) {
         if(param == CUTOFF_PARAM) {
-            logger.debug("Modulate cutoff " + amount);
+//            logger.debug("Modulate cutoff " + amount);
             cutoff = amount;
         } else if(param == SLOPE_PARAM) {
-            logger.debug("Modulate slope " + amount);
+//            logger.debug("Modulate slope " + amount);
             setSlope(amount);
         } else if(param == RES_PARAM) {
-            logger.debug("Modulate res " + amount);
+//            logger.debug("Modulate res " + amount);
             setResonance(amount);
         }
     }

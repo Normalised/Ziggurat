@@ -6,7 +6,7 @@ import com.relivethefuture.max.modulation.Parameter;
 
 import static java.lang.Math.round;
 
-public class ArrayInterpolator extends CommonModule {
+public class ArrayInterpolator extends CommonModule implements Scalable {
 
     private int size = AdditiveEngineConfig.MAX_PARTIALS;
 

@@ -96,7 +96,7 @@ public class ModMatrix {
         if(w == null) {
             logger.error("No wire for " + combinedName);
         } else {
-            logger.debug(combinedName + " -> " + value);
+//            logger.debug(combinedName + " -> " + value);
             w.setValue(value);
         }
 

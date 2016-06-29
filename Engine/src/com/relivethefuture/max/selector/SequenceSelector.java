@@ -3,7 +3,7 @@ package com.relivethefuture.max.selector;
 /**
  * Created by martin on 11/01/13 at 19:43
  */
-public interface SequenceSelector {
+public interface SequenceSelector extends PartialMask {
     boolean hasChanged();
     float[] getSequence();
 
